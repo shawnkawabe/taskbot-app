@@ -1,7 +1,7 @@
 {
-  "name": "getting-started",
+  "name": "taskmanger-app",
   "version": "1.0.0",
-  "description": "Discord example app",
+  "description": "Discord Task Manager app",
   "main": "app.js",
   "type": "module",
   "engines": {
@@ -12,10 +12,11 @@
     "register": "node commands.js",
     "dev": "nodemon app.js"
   },
-  "author": "Shay DeWael",
+  "author": "Shawn Kawabe",
   "license": "MIT",
   "dependencies": {
     "discord-interactions": "^3.2.0",
+    "discord.js": "^14.12.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "node-fetch": "^3.3.0",

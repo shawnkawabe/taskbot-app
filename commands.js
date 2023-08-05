@@ -1,45 +1,65 @@
 import 'dotenv/config';
-import { getRPSChoices } from './game.js';
-import { capitalize, InstallGlobalCommands } from './utils.js';
+import express from 'express';
+import { InteractionType, InteractionResponseType } from 'discord-interactions';
+import { VerifyDiscordRequest, DiscordRequest } from '../utils.js';
 
-// Get the game choices from game.js
-function createCommandChoices() {
-  const choices = getRPSChoices();
-  const commandChoices = [];
+// Create and configure express app
+const app = express();
+app.use(express.json({ verify: VerifyDiscordRequest(process.env.PUBLIC_KEY) }));
 
-  for (let choice of choices) {
-    commandChoices.push({
-      name: capitalize(choice),
-      value: choice.toLowerCase(),
-    });
+app.post('/interactions', function (req, res) {
+  // Interaction type and data
+  const { type, data } = req.body;
+  /**
+   * Handle slash command requests
+   */
+  if (type === InteractionType.APPLICATION_COMMAND) {
+    // Slash command with name of "test"
+    if (data.name === 'test') {
+      // Send a message as response
+      return res.send({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: { content: 'A wild message appeared' },
+      });
+    }
   }
+});
 
-  return commandChoices;
+async function createCommand() {
+  const appId = process.env.APP_ID;
+
+  /**
+   * Globally-scoped slash commands (generally only recommended for production)
+   * See https://discord.com/developers/docs/interactions/application-commands#create-global-application-command
+   */
+  const globalEndpoint = `applications/${appId}/commands`;
+
+  /**
+   * Guild-scoped slash commands
+   * See https://discord.com/developers/docs/interactions/application-commands#create-guild-application-command
+   */
+  // const guildEndpoint = `applications/${appId}/guilds/<your guild id>/commands`;
+  const commandBody = {
+    name: 'test',
+    description: 'Just your average command',
+    // chat command (see https://discord.com/developers/docs/interactions/application-commands#application-command-object-application-command-types)
+    type: 1,
+  };
+
+  try {
+    // Send HTTP request with bot token
+    const res = await DiscordRequest(globalEndpoint, {
+      method: 'POST',
+      body: commandBody,
+    });
+    console.log(await res.json());
+  } catch (err) {
+    console.error('Error installing commands: ', err);
+  }
 }
 
-// Simple test command
-const TEST_COMMAND = {
-  name: 'test',
-  description: 'Basic command',
-  type: 1,
-};
+app.listen(3000, () => {
+  console.log('Listening on port 3000');
 
-// Command containing options
-const CHALLENGE_COMMAND = {
-  name: 'challenge',
-  description: 'Challenge to a match of rock paper scissors',
-  options: [
-    {
-      type: 3,
-      name: 'object',
-      description: 'Pick your object',
-      required: true,
-      choices: createCommandChoices(),
-    },
-  ],
-  type: 1,
-};
-
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND];
-
-InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
+  createCommand();
+});
